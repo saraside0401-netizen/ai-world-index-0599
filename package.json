@@ -9,7 +9,7 @@
     "dev": "cd packages/web && npx vite",
     "dev:desktop": "cd packages/desktop && npx vite",
     "dev:mobile": "cd packages/mobile && npx expo start --port $(node -e \"console.log(require('./__ports.cjs').mobile)\")",
-    "build": "turbo build",
+    "build": "npm run build:web",
     "build:web": "cd packages/web && npx vite build",
     "start": "pm2 startOrRestart ecosystem.config.cjs --update-env",
     "stop": "pm2 delete web-app 2>/dev/null || true",
