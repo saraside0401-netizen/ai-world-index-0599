@@ -1,26 +1,26 @@
 {
   "name": "sandbox-app-template",
   "private": true,
-  "packageManager": "bun@1.3.14",
+  "packageManager": "npm@10.9.0",
   "workspaces": [
     "packages/*"
   ],
   "scripts": {
-    "dev": "cd packages/web && bunx vite",
-    "dev:desktop": "cd packages/desktop && bunx vite",
-    "dev:mobile": "cd packages/mobile && bunx expo start --port $(bun --print \"require('../../__ports.cjs').mobile\")",
+    "dev": "cd packages/web && npx vite",
+    "dev:desktop": "cd packages/desktop && npx vite",
+    "dev:mobile": "cd packages/mobile && npx expo start --port $(node -e \"console.log(require('./__ports.cjs').mobile)\")",
     "build": "turbo build",
-    "build:web": "cd packages/web && bunx vite build",
+    "build:web": "cd packages/web && npx vite build",
     "start": "pm2 startOrRestart ecosystem.config.cjs --update-env",
     "stop": "pm2 delete web-app 2>/dev/null || true",
-    "kill:port": "bun run internal:kill-port",
+    "kill:port": "npm run internal:kill-port",
     "lint": "runkit lint",
     "lint:fix": "runkit lint --fix",
     "typecheck": "turbo typecheck",
     "db:generate": "turbo db:generate",
     "db:migrate": "turbo db:migrate",
     "db:push": "turbo db:push",
-    "internal:kill-port": "lsof -t -i :$(bun --print \"require('./__ports.cjs').website\") | xargs kill -9"
+    "internal:kill-port": "lsof -t -i :$(node -e \"console.log(require('./__ports.cjs').website)\") | xargs kill -9"
   },
   "devDependencies": {
     "@runablehq/runkit": "0.1.1",

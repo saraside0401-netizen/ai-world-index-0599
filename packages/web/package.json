@@ -8,12 +8,12 @@
   "scripts": {
     "build": "tsc --noEmit && vite build",
     "dev": "vite",
-    "start": "bun src/__server.ts",
+    "start": "node --experimental-strip-types src/__server.ts",
     "typecheck": "tsc --noEmit",
-    "preview": "bun run build && vite preview",
-    "db:generate": "bun --env-file=../../.env drizzle-kit generate",
-    "db:migrate": "bun --env-file=../../.env drizzle-kit migrate",
-    "db:push": "bun --env-file=../../.env drizzle-kit push"
+    "preview": "npm run build && vite preview",
+    "db:generate": "npx drizzle-kit generate",
+    "db:migrate": "npx drizzle-kit migrate",
+    "db:push": "npx drizzle-kit push"
   },
   "dependencies": {
     "@libsql/client": "^0.17.2",
