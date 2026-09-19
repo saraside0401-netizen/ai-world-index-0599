@@ -8,7 +8,7 @@
   "scripts": {
     "build": "tsc --noEmit && vite build",
     "dev": "vite",
-    "start": "node --experimental-strip-types src/__server.ts",
+    "start": "npx tsx src/server.ts",
     "typecheck": "tsc --noEmit",
     "preview": "npm run build && vite preview",
     "db:generate": "npx drizzle-kit generate",

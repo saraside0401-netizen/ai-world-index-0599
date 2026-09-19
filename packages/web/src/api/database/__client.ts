@@ -4,8 +4,10 @@ import { drizzle } from "drizzle-orm/libsql";
 import { createClient } from "@libsql/client";
 import * as schema from "./schema";
 
+const url = process.env.DATABASE_URL ?? "file::memory:?cache=shared";
+
 const client = createClient({
-  url: process.env.DATABASE_URL!,
+  url,
   authToken: process.env.DATABASE_AUTH_TOKEN,
 });
 
