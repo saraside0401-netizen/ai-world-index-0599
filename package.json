@@ -10,7 +10,7 @@
     "dev:desktop": "cd packages/desktop && npx vite",
     "dev:mobile": "cd packages/mobile && npx expo start --port $(node -e \"console.log(require('./__ports.cjs').mobile)\")",
     "build": "npm run build:web",
-    "build:web": "cd packages/web && npx vite build",
+    "build:web": "cd packages/web && SKIP_ASSET_OPTIMIZER=1 npx vite build",
     "start": "pm2 startOrRestart ecosystem.config.cjs --update-env",
     "stop": "pm2 delete web-app 2>/dev/null || true",
     "kill:port": "npm run internal:kill-port",

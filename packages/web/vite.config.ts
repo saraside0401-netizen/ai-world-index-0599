@@ -22,7 +22,7 @@ export default defineConfig(({ mode }) => {
       react(),
       runableAnalyticsPlugin(),
       tailwind(),
-      assetOptimizerPlugin(),
+      ...(process.env.SKIP_ASSET_OPTIMIZER ? [] : [assetOptimizerPlugin()]),
     ],
     resolve: {
       alias: {
