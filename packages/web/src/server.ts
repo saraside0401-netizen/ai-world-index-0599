@@ -3,6 +3,7 @@
 // Node-compatible production server — no Bun runtime required.
 
 import app from "./api/index.ts";
+import { initDatabase } from "./api/database/init.ts";
 import { createServer } from "node:http";
 import { readFile, stat } from "node:fs/promises";
 import path from "node:path";
@@ -96,6 +97,12 @@ const server = createServer(async (req, res) => {
   }
 });
 
-server.listen(port, () => {
+server.listen(port, async () => {
+  try {
+    await initDatabase();
+    console.log("Database initialized.");
+  } catch (err) {
+    console.error("Database init failed:", err);
+  }
   console.log(`Web server listening on http://localhost:${port}`);
 });

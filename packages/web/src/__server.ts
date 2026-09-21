@@ -1,4 +1,5 @@
 import app from "./api";
+import { initDatabase } from "./api/database/init";
 
 const port = Number(process.env.PORT ?? 3000);
 const distDir = `${import.meta.dirname}/../dist`;
