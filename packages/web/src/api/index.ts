@@ -1,5 +1,6 @@
 import type { RouterClient } from "@orpc/server";
 import { createApp } from "./__core/app";
+import { initDatabase } from "./database/init";
 import { admin } from "./routes/admin";
 import { history } from "./routes/history";
 import { indicators } from "./routes/indicators";
@@ -28,7 +29,14 @@ export type AppRouter = typeof router;
 export type AppRouterClient = RouterClient<AppRouter>;
 
 const app = createApp(router);
-// Rare plain-HTTP endpoints (webhooks, streaming, the Better Auth handler)
-// register here with full paths, e.g. app.post("/api/webhooks/example", ...)
+
+// Автосоздание таблиц и каркаса 10 × 3 при первом обращении к API.
+// Работает и в dev (hono-dev-plugin), и в production (server.ts).
+let initPromise: Promise<void> | null = null;
+app.use("/api/*", async (_c, next) => {
+  if (!initPromise) initPromise = initDatabase().catch((err) => { initPromise = null; throw err; });
+  await initPromise;
+  await next();
+});
 
 export default app;

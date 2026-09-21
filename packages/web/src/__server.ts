@@ -5,6 +5,8 @@ const port = Number(process.env.PORT ?? 3000);
 const distDir = `${import.meta.dirname}/../dist`;
 const indexPath = `${distDir}/index.html`;
 
+initDatabase().then(() => console.log("Database initialized.")).catch((err) => console.error("Database init failed:", err));
+
 const server = Bun.serve({
   port,
   async fetch(request) {

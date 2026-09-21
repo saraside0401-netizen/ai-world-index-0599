@@ -8,12 +8,7 @@
 
 import { sql } from "drizzle-orm";
 import { db } from "./__client";
-import {
-  INDICATOR_WEIGHT_DEFAULT,
-  BOUNDS_RULE_DEFAULT,
-  indexIndicators,
-  normalizationRules,
-} from "./schema";
+import { indexIndicators, normalizationRules } from "./schema";
 
 const DIRECTION_CODES = ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10"];
 const SLOTS = [1, 2, 3];
@@ -31,7 +26,7 @@ export async function initDatabase(): Promise<void> {
   const hasHistory = await tableExists("index_history");
 
   if (!hasIndicators) {
-    await db.run(sql`
+    await db.run(sql.raw(`
       CREATE TABLE IF NOT EXISTS index_indicators (
         id TEXT PRIMARY KEY,
         direction TEXT NOT NULL,
@@ -43,26 +38,26 @@ export async function initDatabase(): Promise<void> {
         source TEXT NOT NULL DEFAULT '',
         source_url TEXT NOT NULL DEFAULT '',
         normalized_score REAL,
-        indicator_weight REAL NOT NULL DEFAULT ${INDICATOR_WEIGHT_DEFAULT},
+        indicator_weight REAL NOT NULL DEFAULT 0.3333333333333333,
         direction_contribution REAL,
         data_status TEXT NOT NULL DEFAULT 'missing',
         missing_reason TEXT NOT NULL DEFAULT '',
         created_at TEXT NOT NULL DEFAULT (CURRENT_TIMESTAMP),
         updated_at TEXT NOT NULL DEFAULT (CURRENT_TIMESTAMP)
       )
-    `);
-    await db.run(sql`
+    `));
+    await db.run(sql.raw(`
       CREATE INDEX IF NOT EXISTS index_indicators_direction_idx
       ON index_indicators (direction, slot)
-    `);
-    await db.run(sql`
+    `));
+    await db.run(sql.raw(`
       CREATE UNIQUE INDEX IF NOT EXISTS index_indicators_direction_slot_key
       ON index_indicators (direction, slot)
-    `);
+    `));
   }
 
   if (!hasRules) {
-    await db.run(sql`
+    await db.run(sql.raw(`
       CREATE TABLE IF NOT EXISTS normalization_rules (
         id TEXT PRIMARY KEY,
         direction TEXT NOT NULL,
@@ -76,21 +71,21 @@ export async function initDatabase(): Promise<void> {
         note TEXT NOT NULL DEFAULT '',
         reference_dataset TEXT NOT NULL DEFAULT '',
         reference_source_url TEXT NOT NULL DEFAULT '',
-        bounds_rule TEXT NOT NULL DEFAULT ${BOUNDS_RULE_DEFAULT},
+        bounds_rule TEXT NOT NULL DEFAULT 'L = P2.5, U = P97.5',
         rule_version TEXT NOT NULL DEFAULT 'V1.0',
         verified_at TEXT,
         created_at TEXT NOT NULL DEFAULT (CURRENT_TIMESTAMP),
         updated_at TEXT NOT NULL DEFAULT (CURRENT_TIMESTAMP)
       )
-    `);
-    await db.run(sql`
+    `));
+    await db.run(sql.raw(`
       CREATE UNIQUE INDEX IF NOT EXISTS normalization_rules_direction_slot_key
       ON normalization_rules (direction, slot)
-    `);
+    `));
   }
 
   if (!hasHistory) {
-    await db.run(sql`
+    await db.run(sql.raw(`
       CREATE TABLE IF NOT EXISTS index_history (
         id TEXT PRIMARY KEY,
         observed_on TEXT NOT NULL,
@@ -101,11 +96,11 @@ export async function initDatabase(): Promise<void> {
         methodology_version TEXT NOT NULL DEFAULT 'V1.0',
         created_at TEXT NOT NULL DEFAULT (CURRENT_TIMESTAMP)
       )
-    `);
-    await db.run(sql`
+    `));
+    await db.run(sql.raw(`
       CREATE UNIQUE INDEX IF NOT EXISTS index_history_observed_on_key
       ON index_history (observed_on)
-    `);
+    `));
   }
 
   // Каркас 10 × 3 для показателей, если пусто.
@@ -119,7 +114,7 @@ export async function initDatabase(): Promise<void> {
           id: crypto.randomUUID(),
           direction: code,
           slot,
-          indicatorWeight: INDICATOR_WEIGHT_DEFAULT,
+          indicatorWeight: 1 / 3,
           createdAt: now,
           updatedAt: now,
         });
@@ -138,7 +133,7 @@ export async function initDatabase(): Promise<void> {
           id: crypto.randomUUID(),
           direction: code,
           slot,
-          boundsRule: BOUNDS_RULE_DEFAULT,
+          boundsRule: "L = P2.5, U = P97.5",
           ruleVersion: "V1.0",
           createdAt: now,
           updatedAt: now,
