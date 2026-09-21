@@ -51,8 +51,6 @@ const FILL_CLASS: Record<FillStatus, string> = {
   "needs-value": "border-pink/30 bg-pink/10 text-pink",
 };
 
-
-
 const num = (v: number | null | undefined, digits = 1) =>
   v === null || v === undefined || !Number.isFinite(v) ? "—" : v.toFixed(digits);
 
@@ -74,6 +72,36 @@ function Field({
   );
 }
 
+const isHttpUrl = (v: string) => /^https?:\/\/\S+$/i.test(v.trim());
+
+function validateDraft(d: {
+  title: string;
+  rawValue: number | null;
+  unit: string;
+  year: string;
+  source: string;
+  sourceUrl: string;
+}): string[] {
+  const errs: string[] = [];
+  if (!d.title.trim()) errs.push("Название показателя обязательно");
+  if (d.rawValue === null || !Number.isFinite(d.rawValue)) errs.push("Значение должно быть числом");
+  if (!d.unit.trim()) errs.push("Единица измерения обязательна");
+  if (!d.year.trim()) errs.push("Год обязателен");
+  if (!d.source.trim()) errs.push("Источник обязателен");
+  if (!isHttpUrl(d.sourceUrl)) errs.push("Ссылка должна быть http(s)://...");
+  return errs;
+}
+
+type Draft = {
+  title: string;
+  rawValue: number | null;
+  unit: string;
+  year: string;
+  source: string;
+  sourceUrl: string;
+  missingReason: string;
+};
+
 function IndicatorRow({
   indicator,
   score,
@@ -88,12 +116,42 @@ function IndicatorRow({
   onRemove: () => void;
 }) {
   const [open, setOpen] = useState(false);
+  const [draft, setDraft] = useState<Draft>({
+    title: indicator.title,
+    rawValue: indicator.rawValue,
+    unit: indicator.unit,
+    year: indicator.year,
+    source: indicator.source,
+    sourceUrl: indicator.sourceUrl,
+    missingReason: indicator.missingReason,
+  });
+  const [errors, setErrors] = useState<string[]>([]);
+  const [saved, setSaved] = useState("");
+
   const gaps = missingSourceFields(indicator);
   const fill = fillStatus(gaps);
 
-
-
-
+  const doSave = (verify: boolean) => {
+    const errs = validateDraft(draft);
+    if (errs.length) {
+      setErrors(errs);
+      setSaved("");
+      return;
+    }
+    setErrors([]);
+    onChange({
+      title: draft.title.trim(),
+      rawValue: draft.rawValue,
+      unit: draft.unit.trim(),
+      year: draft.year.trim(),
+      source: draft.source.trim(),
+      sourceUrl: draft.sourceUrl.trim(),
+      missingReason: "",
+      verified: verify,
+    });
+    setSaved(verify ? "Сохранено и подтверждено" : "Сохранено");
+    setTimeout(() => setSaved(""), 3000);
+  };
 
   return (
     <div className="rounded-xl border border-white/10 bg-white/5">
@@ -135,9 +193,9 @@ function IndicatorRow({
             <input
               aria-label="Название показателя"
               className={inputClass}
-              value={indicator.title}
+              value={draft.title}
               placeholder="не заполнено"
-              onChange={(e) => onChange({ title: e.target.value })}
+              onChange={(e) => setDraft((d) => ({ ...d, title: e.target.value }))}
             />
           </Field>
 
@@ -147,11 +205,11 @@ function IndicatorRow({
                 aria-label="Значение"
                 className={inputClass}
                 inputMode="decimal"
-                value={indicator.rawValue ?? ""}
+                value={draft.rawValue ?? ""}
                 placeholder="пусто"
                 onChange={(e) => {
                   const v = e.target.value.trim().replace(",", ".");
-                  onChange({ rawValue: v === "" ? null : Number(v) });
+                  setDraft((d) => ({ ...d, rawValue: v === "" ? null : Number(v) }));
                 }}
               />
             </Field>
@@ -159,9 +217,9 @@ function IndicatorRow({
               <input
                 aria-label="Единица измерения"
                 className={inputClass}
-                value={indicator.unit}
+                value={draft.unit}
                 placeholder="пусто"
-                onChange={(e) => onChange({ unit: e.target.value })}
+                onChange={(e) => setDraft((d) => ({ ...d, unit: e.target.value }))}
               />
             </Field>
             <Field label="Год">
@@ -169,25 +227,9 @@ function IndicatorRow({
                 aria-label="Год"
                 className={inputClass}
                 inputMode="numeric"
-                value={indicator.year}
+                value={draft.year}
                 placeholder="пусто"
-                onChange={(e) => onChange({ year: e.target.value })}
-              />
-            </Field>
-            <Field label="Нормализованный балл 0–100">
-              <input
-                aria-label="Нормализованный балл 0–100"
-                className={inputClass}
-                inputMode="decimal"
-                value={indicator.score ?? ""}
-                placeholder="пусто"
-                onChange={(e) => {
-                  const v = e.target.value.trim().replace(",", ".");
-                  const n = v === "" ? null : Number(v);
-                  onChange({
-                    score: n === null || !Number.isFinite(n) ? null : Math.min(100, Math.max(0, n)),
-                  });
-                }}
+                onChange={(e) => setDraft((d) => ({ ...d, year: e.target.value }))}
               />
             </Field>
           </div>
@@ -196,60 +238,53 @@ function IndicatorRow({
             <input
               aria-label="Источник"
               className={inputClass}
-              value={indicator.source}
+              value={draft.source}
               placeholder="пусто"
-              onChange={(e) => onChange({ source: e.target.value })}
+              onChange={(e) => setDraft((d) => ({ ...d, source: e.target.value }))}
             />
           </Field>
           <Field label="Ссылка на источник">
             <input
               aria-label="Ссылка на источник"
               className={inputClass}
-              value={indicator.sourceUrl}
-              placeholder="пусто"
-              onChange={(e) => onChange({ sourceUrl: e.target.value })}
+              value={draft.sourceUrl}
+              placeholder="https://..."
+              onChange={(e) => setDraft((d) => ({ ...d, sourceUrl: e.target.value }))}
             />
           </Field>
 
-          <Field label="Причина отсутствия данных (missing_reason)">
-            <input
-              aria-label="Причина отсутствия данных (missing_reason)"
-              className={inputClass}
-              value={indicator.missingReason}
-              placeholder={indicator.rawValue === null ? "обязательно, если значения нет" : "не требуется"}
-              onChange={(e) => onChange({ missingReason: e.target.value })}
-            />
-          </Field>
-
-          {gaps.length > 0 && (
-            <div className="rounded-xl border border-gold/30 bg-gold/10 px-2.5 py-2">
-              <span className="text-[9px] tracking-wide text-gold/80 uppercase">
-                Не заполнено
-              </span>
-              <ul className="mt-1 space-y-0.5 text-[10px] text-gold">
-                {gaps.map((g) => (
-                  <li key={g}>• {FIELD_LABELS[g] ?? g}</li>
-                ))}
-              </ul>
-            </div>
+          {errors.length > 0 && (
+            <ul className="space-y-0.5 rounded-xl border border-pink/30 bg-pink/10 px-2.5 py-2 text-[10px] text-pink">
+              {errors.map((e, i) => (
+                <li key={i}>• {e}</li>
+              ))}
+            </ul>
           )}
-
-
+          {saved && (
+            <p className="rounded-xl border border-lime/30 bg-lime/10 px-2.5 py-2 text-[10px] text-lime">
+              {saved}
+            </p>
+          )}
 
           <div className="flex items-center justify-between pt-0.5">
             <span className="text-[10px] text-paper/40">
               Вес: {(indicator.weight * 100).toFixed(1)}% · вклад: {num(contribution, 2)}
             </span>
             <div className="flex items-center gap-2">
-              <label className="flex items-center gap-1 text-[10px] text-paper/50">
-                <input
-                  aria-label="Показатель проверен"
-                  type="checkbox"
-                  checked={Boolean(indicator.verified)}
-                  onChange={(e) => onChange({ verified: e.target.checked })}
-                />
-                проверен
-              </label>
+              <button
+                type="button"
+                onClick={() => doSave(false)}
+                className="rounded-full border border-cyan/30 bg-cyan/10 px-2.5 py-1 text-[10px] text-cyan"
+              >
+                Сохранить
+              </button>
+              <button
+                type="button"
+                onClick={() => doSave(true)}
+                className="rounded-full border border-lime/30 bg-lime/10 px-2.5 py-1 text-[10px] text-lime"
+              >
+                Сохранить и подтвердить
+              </button>
               <button
                 type="button"
                 onClick={onRemove}
@@ -284,8 +319,6 @@ export function DataSection() {
     for (const i of indicators) acc[fillStatus(missingSourceFields(i))] += 1;
     return acc;
   }, [indicators]);
-
-
 
   const [importOpen, setImportOpen] = useState(false);
   const [importText, setImportText] = useState("");
@@ -344,7 +377,6 @@ export function DataSection() {
           требует значения {fillCounts["needs-value"]}
         </span>
       </div>
-
 
       {!hydrated ? (
         <p className="mt-3 text-[11px] text-paper/40">Загрузка таблицы…</p>
